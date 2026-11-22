@@ -1,0 +1,9 @@
+import {useState} from 'react';
+import {Link} from 'react-router-dom';
+import './Settings.css';
+export default function Settings(){
+ const [currentPassword,setCurrent]=useState('');const [newPassword,setNew]=useState('');const [confirm,setConfirm]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+ async function save(e){e.preventDefault();setMessage('');if(newPassword!==confirm){setMessage('New passwords do not match');return}setBusy(true);
+ try{const c=await fetch('/api/auth/csrf',{credentials:'include'}).then(r=>r.json());const r=await fetch('/api/account/password',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json',[c.headerName]:c.token},body:JSON.stringify({currentPassword,newPassword})});const data=await r.json();if(!r.ok)throw Error(data.message||'Could not update password');setMessage(data.message);setCurrent('');setNew('');setConfirm('')}catch(e){setMessage(e.message)}finally{setBusy(false)}}
+ return <main className="sh-settings"><Link to="/" className="sh-return-link">← Back to Home</Link><h1>Account Settings</h1><p>Keep your ServiceHub account secure.</p><form onSubmit={save}><h2>Change Password</h2><label>Current password<input type="password" autoComplete="current-password" value={currentPassword} onChange={e=>setCurrent(e.target.value)} required/></label><label>New password<input type="password" autoComplete="new-password" minLength={8} maxLength={128} value={newPassword} onChange={e=>setNew(e.target.value)} required/></label><label>Confirm new password<input type="password" autoComplete="new-password" value={confirm} onChange={e=>setConfirm(e.target.value)} required/></label><button disabled={busy}>{busy?'Saving...':'Update Password'}</button>{message&&<p role="status">{message}</p>}</form></main>
+}

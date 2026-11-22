@@ -1,0 +1,21 @@
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Shared outlined back button across ServiceHub pages */
+a.sh-return-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  width: fit-content; min-height: 36px; box-sizing: border-box;
+  padding: 8px 15px; border: 1px solid #7352b9 !important; border-radius: 10px !important;
+  background: #201b37 !important; color: #e2d3ff !important; text-decoration: none !important;
+  font-size: 12px; font-weight: 600; line-height: 1.4;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+a.sh-return-link:hover {background:#332451 !important; border-color:#a17af5 !important; color:#fff !important;}
+a.sh-return-link:focus-visible {outline:2px solid #bba3fa; outline-offset:3px;}
