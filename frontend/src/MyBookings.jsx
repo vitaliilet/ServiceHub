@@ -1,3 +1,4 @@
+```
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -260,7 +261,8 @@ if (filter === 'completed') {
   const specialist = specialists.find(
     (s) => Number(s.id) === Number(booking.specialistId)
   );
-
+ console.log("BOOKING:", booking);
+  console.log("SPECIALIST:", specialist);
   return (
 
         <div
@@ -277,11 +279,19 @@ if (filter === 'completed') {
 <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
 {specialist && (
   <img
-    src={specialist.imageUrl || `/professionals/${specialist.id}.jpg`}
+    src={`/professionals/${specialist.id}.jpg`}
     alt={specialist.name}
     onError={(e) => {
-      e.currentTarget.onerror = null
-      e.currentTarget.src = '/default-avatar.svg'
+      const img = e.currentTarget;
+      const localPhoto = `/professionals/${specialist.id}.jpg`;
+      // If the backend image URL fails, try the local photo before the placeholder.
+      if (img.dataset.fallback !== 'local' && img.src !== new URL(localPhoto, window.location.origin).href) {
+        img.dataset.fallback = 'local';
+        img.src = localPhoto;
+      } else {
+        img.onerror = null;
+        img.src = '/default-avatar.svg';
+      }
     }}
     style={{
       width: 110,
@@ -543,3 +553,5 @@ style={{
     </div>
   );
 }
+
+```

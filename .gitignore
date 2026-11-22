@@ -54,3 +54,4 @@ Thumbs.db
 /data/
 *.mv.db
 *.trace.db
+/uploads/

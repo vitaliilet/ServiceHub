@@ -1,6 +1,7 @@
 
 package com.servicehub.controller;
 import com.servicehub.model.Booking;
+import com.servicehub.dto.CreateBookingRequest;
 import com.servicehub.repository.BookingRepository;
 import com.servicehub.repository.SpecialistRepository;
 import com.servicehub.repository.SpecialistDayOffRepository;
@@ -90,7 +91,7 @@ public class BookingController {
     @org.springframework.transaction.annotation.Transactional
     @PostMapping
     public ResponseEntity<?> createBooking(
-            @RequestBody Booking booking,
+            @RequestBody CreateBookingRequest input,
             Authentication authentication
     ) {
         if (authentication == null ||
@@ -108,6 +109,17 @@ public class BookingController {
                     .body("User not found.");
         }
 
+        if (input == null) {
+            return ResponseEntity.badRequest().body("Booking details are required.");
+        }
+        if (input.description() != null && input.description().length() > 1000) {
+            return ResponseEntity.badRequest().body("Description is too long.");
+        }
+        Booking booking = new Booking();
+        booking.setSpecialistId(input.specialistId());
+        booking.setBookingDate(input.bookingDate());
+        booking.setBookingTime(input.bookingTime());
+        booking.setDescription(input.description());
         booking.setUserId(user.getId());
         booking.setCustomerName(user.getName());
         booking.setCustomerEmail(user.getEmail());

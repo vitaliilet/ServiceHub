@@ -10,12 +10,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import com.servicehub.repository.UserRepository;
 
 @Configuration
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, UserRepository users)
             throws Exception {
 
         http
@@ -62,6 +64,7 @@ public class SecurityConfig {
                             response.setStatus(200);
                         })
                 )
+                .addFilterBefore(new ActiveAccountFilter(users), AuthorizationFilter.class)
                 .httpBasic(basic -> basic.disable());
 
         return http.build();

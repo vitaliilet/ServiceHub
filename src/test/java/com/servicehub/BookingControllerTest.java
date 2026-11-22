@@ -2,6 +2,8 @@ package com.servicehub;
 
 import com.servicehub.controller.BookingController;
 import com.servicehub.model.Booking;
+import com.servicehub.dto.CreateBookingRequest;
+import com.servicehub.repository.NotificationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import com.servicehub.model.User;
@@ -27,10 +29,11 @@ class BookingControllerTest {
                 mock(com.servicehub.repository.SpecialistDayOffRepository.class),
                 mock(com.servicehub.repository.BookingRepository.class),
                 mock(com.servicehub.repository.SpecialistRepository.class),
-                mock(com.servicehub.repository.UserRepository.class)
+                mock(com.servicehub.repository.UserRepository.class),
+                mock(NotificationRepository.class)
         );
 
-        var response = controller.createBooking(new Booking(), null);
+        var response = controller.createBooking(new CreateBookingRequest(null, null, null, null), null);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertEquals("Please sign in to book.", response.getBody());
@@ -48,7 +51,8 @@ class BookingControllerTest {
                 dayOffRepository,
                 bookingRepository,
                 specialistRepository,
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
@@ -64,6 +68,7 @@ class BookingControllerTest {
         when(specialist.getWorkEndHour()).thenReturn(17);
 
         when(specialistRepository.existsById(10L)).thenReturn(true);
+        when(specialistRepository.lockForBooking(10L)).thenReturn(Optional.of(specialist));
         when(specialistRepository.findById(10L))
                 .thenReturn(Optional.of(specialist));
 
@@ -94,7 +99,7 @@ class BookingControllerTest {
                 )
         );
 
-        var response = controller.createBooking(booking, authentication);
+        var response = controller.createBooking(new CreateBookingRequest(booking.getSpecialistId(), booking.getBookingDate(), booking.getBookingTime(), booking.getDescription()), authentication);
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertEquals("This time slot is already booked.", response.getBody());
@@ -113,7 +118,8 @@ class BookingControllerTest {
                 dayOffRepository,
                 bookingRepository,
                 specialistRepository,
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
@@ -142,7 +148,7 @@ class BookingControllerTest {
                 )
         );
 
-        var response = controller.createBooking(booking, authentication);
+        var response = controller.createBooking(new CreateBookingRequest(booking.getSpecialistId(), booking.getBookingDate(), booking.getBookingTime(), booking.getDescription()), authentication);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Invalid booking date or time.", response.getBody());
@@ -161,7 +167,8 @@ class BookingControllerTest {
                 dayOffRepository,
                 bookingRepository,
                 specialistRepository,
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
@@ -177,6 +184,7 @@ class BookingControllerTest {
         when(specialist.getWorkEndHour()).thenReturn(17);
 
         when(specialistRepository.existsById(10L)).thenReturn(true);
+        when(specialistRepository.lockForBooking(10L)).thenReturn(Optional.of(specialist));
         when(specialistRepository.findById(10L))
                 .thenReturn(Optional.of(specialist));
 
@@ -203,7 +211,7 @@ class BookingControllerTest {
                 )
         );
 
-        var response = controller.createBooking(booking, authentication);
+        var response = controller.createBooking(new CreateBookingRequest(booking.getSpecialistId(), booking.getBookingDate(), booking.getBookingTime(), booking.getDescription()), authentication);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(
@@ -225,7 +233,8 @@ class BookingControllerTest {
                 dayOffRepository,
                 bookingRepository,
                 specialistRepository,
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
@@ -241,6 +250,7 @@ class BookingControllerTest {
         when(specialist.getWorkEndHour()).thenReturn(17);
 
         when(specialistRepository.existsById(10L)).thenReturn(true);
+        when(specialistRepository.lockForBooking(10L)).thenReturn(Optional.of(specialist));
         when(specialistRepository.findById(10L))
                 .thenReturn(Optional.of(specialist));
 
@@ -264,7 +274,7 @@ class BookingControllerTest {
                 )
         );
 
-        var response = controller.createBooking(booking, authentication);
+        var response = controller.createBooking(new CreateBookingRequest(booking.getSpecialistId(), booking.getBookingDate(), booking.getBookingTime(), booking.getDescription()), authentication);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(
@@ -286,7 +296,8 @@ class BookingControllerTest {
                 dayOffRepository,
                 bookingRepository,
                 specialistRepository,
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
@@ -302,6 +313,7 @@ class BookingControllerTest {
         when(specialist.getWorkEndHour()).thenReturn(17);
 
         when(specialistRepository.existsById(10L)).thenReturn(true);
+        when(specialistRepository.lockForBooking(10L)).thenReturn(Optional.of(specialist));
         when(specialistRepository.findById(10L))
                 .thenReturn(Optional.of(specialist));
 
@@ -315,8 +327,8 @@ class BookingControllerTest {
         booking.setBookingDate(date);
         booking.setBookingTime(LocalTime.of(10, 0));
 
-        when(bookingRepository.saveAndFlush(booking))
-                .thenReturn(booking);
+        when(bookingRepository.saveAndFlush(any(Booking.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         var authentication = new UsernamePasswordAuthenticationToken(
                 "client@test.com",
@@ -328,14 +340,15 @@ class BookingControllerTest {
                 )
         );
 
-        var response = controller.createBooking(booking, authentication);
+        var response = controller.createBooking(new CreateBookingRequest(booking.getSpecialistId(), booking.getBookingDate(), booking.getBookingTime(), booking.getDescription()), authentication);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("CONFIRMED", booking.getStatus());
-        assertEquals(1L, booking.getUserId());
-        assertEquals("Test Client", booking.getCustomerName());
+        var savedBooking = (Booking) response.getBody();
+        assertEquals("CONFIRMED", savedBooking.getStatus());
+        assertEquals(1L, savedBooking.getUserId());
+        assertEquals("Test Client", savedBooking.getCustomerName());
 
-        verify(bookingRepository).saveAndFlush(booking);
+        verify(bookingRepository).saveAndFlush(any(Booking.class));
     }
 
     @Test
@@ -349,7 +362,8 @@ class BookingControllerTest {
                 dayOffRepository,
                 bookingRepository,
                 specialistRepository,
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
@@ -393,7 +407,8 @@ class BookingControllerTest {
                 dayOffRepository,
                 bookingRepository,
                 specialistRepository,
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
@@ -436,7 +451,8 @@ class BookingControllerTest {
                 mock(SpecialistDayOffRepository.class),
                 bookingRepository,
                 mock(SpecialistRepository.class),
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
@@ -477,7 +493,8 @@ class BookingControllerTest {
                 mock(SpecialistDayOffRepository.class),
                 bookingRepository,
                 mock(SpecialistRepository.class),
-                userRepository
+                userRepository,
+                mock(NotificationRepository.class)
         );
 
         User user = mock(User.class);
