@@ -33,6 +33,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/professionals")
 public class ProfessionalController {
+    private final com.servicehub.repository.NotificationRepository notificationRepository;
     private final SpecialistDayOffRepository dayOffRepository;
     private final UserRepository userRepository;
     private final SpecialistRepository specialistRepository;
@@ -42,12 +43,14 @@ public class ProfessionalController {
             UserRepository userRepository,
             SpecialistRepository specialistRepository,
             BookingRepository bookingRepository,
-            SpecialistDayOffRepository dayOffRepository) {
+            SpecialistDayOffRepository dayOffRepository,
+            com.servicehub.repository.NotificationRepository notificationRepository) {
 
         this.userRepository = userRepository;
         this.specialistRepository = specialistRepository;
         this.bookingRepository = bookingRepository;
         this.dayOffRepository = dayOffRepository;
+        this.notificationRepository = notificationRepository;
     }
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile(Authentication authentication) {
@@ -315,6 +318,7 @@ public class ProfessionalController {
 
         booking.setStatus("CANCELLED");
         bookingRepository.save(booking);
+        if (booking.getUserId() != null) notificationRepository.save(new com.servicehub.model.Notification(booking.getUserId(), "Booking #" + booking.getId() + " is now " + booking.getStatus()));
 
         return ResponseEntity.ok(booking);
     }
@@ -366,6 +370,7 @@ public class ProfessionalController {
 
         booking.setStatus("COMPLETED");
         bookingRepository.save(booking);
+        if (booking.getUserId() != null) notificationRepository.save(new com.servicehub.model.Notification(booking.getUserId(), "Booking #" + booking.getId() + " is now " + booking.getStatus()));
 
         return ResponseEntity.ok(booking);
     }

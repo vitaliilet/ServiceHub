@@ -21,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/bookings")
 public class BookingController {
+    private final com.servicehub.repository.NotificationRepository notificationRepository;
     private final SpecialistDayOffRepository dayOffRepository;
     private final BookingRepository bookingRepository;
     private final SpecialistRepository specialistRepository;
@@ -30,12 +31,14 @@ public class BookingController {
             SpecialistDayOffRepository dayOffRepository,
             BookingRepository bookingRepository,
             SpecialistRepository specialistRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            com.servicehub.repository.NotificationRepository notificationRepository
     ) {
         this.dayOffRepository = dayOffRepository;
         this.bookingRepository = bookingRepository;
         this.specialistRepository = specialistRepository;
         this.userRepository = userRepository;
+        this.notificationRepository = notificationRepository;
     }
 
 
@@ -56,6 +59,24 @@ public class BookingController {
                 .toList();
     }
 
+    @GetMapping("/slots")
+    public ResponseEntity<?> availableSlots(@RequestParam Long specialistId, @RequestParam LocalDate date) {
+        var specialist = specialistRepository.findById(specialistId).orElse(null);
+        if (specialist == null) return ResponseEntity.notFound().build();
+        if (date.isBefore(LocalDate.now()) || date.getDayOfWeek().getValue() > 5 ||
+            dayOffRepository.existsBySpecialistIdAndDayOff(specialistId, date))
+            return ResponseEntity.ok(List.of());
+        var occupied = bookingRepository.findBySpecialistIdAndBookingDateAndStatus(specialistId, date, "CONFIRMED")
+                .stream().map(Booking::getBookingTime).collect(java.util.stream.Collectors.toSet());
+        var slots = new java.util.ArrayList<String>();
+        for (int hour = specialist.getWorkStartHour(); hour < specialist.getWorkEndHour(); hour++) {
+            LocalTime time = LocalTime.of(hour, 0);
+            if (!occupied.contains(time) && (!date.equals(LocalDate.now()) || time.isAfter(LocalTime.now())))
+                slots.add(time.toString());
+        }
+        return ResponseEntity.ok(slots);
+    }
+
     @GetMapping("/days-off")
     public List<LocalDate> getSpecialistDaysOff(
             @RequestParam Long specialistId
@@ -66,6 +87,7 @@ public class BookingController {
                 .map(dayOff -> dayOff.getDayOff())
                 .toList();
     }
+    @org.springframework.transaction.annotation.Transactional
     @PostMapping
     public ResponseEntity<?> createBooking(
             @RequestBody Booking booking,
@@ -119,7 +141,7 @@ public class BookingController {
                     .body("Cannot book a time in the past.");
         }
         var specialist = specialistRepository
-                .findById(booking.getSpecialistId())
+                .lockForBooking(booking.getSpecialistId())
                 .orElse(null);
 
         if (specialist == null) {
@@ -168,6 +190,7 @@ public class BookingController {
 
         try {
             Booking saved = bookingRepository.saveAndFlush(booking);
+            specialistRepository.findById(saved.getSpecialistId()).map(com.servicehub.model.Specialist::getUser).ifPresent(owner -> notificationRepository.save(new com.servicehub.model.Notification(owner.getId(), "New booking #" + saved.getId() + " on " + saved.getBookingDate())));
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(saved);
@@ -243,6 +266,7 @@ public class BookingController {
 
         booking.setStatus("CANCELLED");
         bookingRepository.save(booking);
+        specialistRepository.findById(booking.getSpecialistId()).map(com.servicehub.model.Specialist::getUser).ifPresent(owner -> notificationRepository.save(new com.servicehub.model.Notification(owner.getId(), "Booking #" + booking.getId() + " cancelled by client")));
 
         return ResponseEntity.ok(booking);
     }

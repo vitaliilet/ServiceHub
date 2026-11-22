@@ -20,6 +20,10 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(
+                                "/auth/login",
+                                "/auth/register"
+                        )
                         .csrfTokenRepository(
                                 org.springframework.security.web.csrf.CookieCsrfTokenRepository
                                         .withHttpOnlyFalse()
@@ -45,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/auth/csrf").permitAll()
                         .requestMatchers(HttpMethod.GET, "/bookings/availability").permitAll()
                         .requestMatchers(HttpMethod.GET, "/bookings/days-off").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/professionals/**").hasRole("PROFESSIONAL")
                         .anyRequest().authenticated()
                 )

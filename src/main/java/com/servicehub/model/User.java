@@ -23,6 +23,30 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(length = 30)
+    private String phone;
+    @Column(length = 120)
+    private String city;
+    @Column(length = 300)
+    private String address;
+    @Column(length = 500)
+    private String imageUrl;
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    @Column(nullable = false)
+    private boolean blocked = false;
+
+    public boolean isBlocked() { return blocked; }
+    public void setBlocked(boolean blocked) { this.blocked = blocked; }
+
     public User() {
     }
 

@@ -104,6 +104,11 @@ public class AuthController {
         }
 
 
+        if (user.isBlocked()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "This account has been suspended. Contact support."));
+        }
+
         httpRequest.getSession(true);
         httpRequest.changeSessionId();
 
