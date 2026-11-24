@@ -55,3 +55,6 @@ Thumbs.db
 *.mv.db
 *.trace.db
 /uploads/
+.env
+.env.*
+!.env.example

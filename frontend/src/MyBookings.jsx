@@ -1,4 +1,4 @@
-```
+
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -92,7 +92,7 @@ async function handleCancel(id) {
 
     const csrf = await csrfResponse.json()
 
-    const response = await fetch(`/api/bookings/${id}/cancel`, {
+const response = await fetch('/api/bookings/' + id + '/cancel', {
       method: 'PATCH',
       credentials: 'include',
       headers: {
@@ -553,5 +553,3 @@ style={{
     </div>
   );
 }
-
-```

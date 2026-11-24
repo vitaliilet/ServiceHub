@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import com.servicehub.repository.UserRepository;
-
+import org.springframework.http.HttpStatus;
 @Configuration
 public class SecurityConfig {
 
@@ -43,6 +43,12 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/specialists").permitAll()
                         .requestMatchers(HttpMethod.GET, "/reviews/specialist/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
@@ -65,7 +71,12 @@ public class SecurityConfig {
                         })
                 )
                 .addFilterBefore(new ActiveAccountFilter(users), AuthorizationFilter.class)
-                .httpBasic(basic -> basic.disable());
+                .httpBasic(basic -> basic.disable())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                        })
+                );
 
         return http.build();
     }
