@@ -7,6 +7,10 @@
     {
       "source": "/auth/:path*",
       "destination": "https://servicehub-backend-u52b.onrender.com/auth/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
